@@ -1,4 +1,4 @@
-# riverpod_tutorials
+# flutter_authentication_riverpod_REST
 
 A new Flutter project.
 
