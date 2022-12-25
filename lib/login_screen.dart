@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_tutorials/auth_state.dart';
+import 'package:riverpod_tutorials/storage_state.dart';
 
 class LoginScreen extends HookConsumerWidget {
   const LoginScreen({super.key});
@@ -51,7 +52,7 @@ class LoginScreen extends HookConsumerWidget {
               height: 10,
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 if (emailController.text.isNotEmpty &&
                     passwordController.text.isNotEmpty) {
                   final authArgs = AuthArgs(
@@ -59,6 +60,10 @@ class LoginScreen extends HookConsumerWidget {
                     password: passwordController.text,
                   );
                   ref.read(authLoginProvider(authArgs));
+                  final isAuthenticated = ref.read(getIsAuthenticatedProvider);
+                  if (isAuthenticated.value!) {
+                    Navigator.pushNamed(context, 'Home');
+                  }
                 }
               },
               child: const Text(

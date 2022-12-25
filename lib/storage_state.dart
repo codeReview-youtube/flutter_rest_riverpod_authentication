@@ -1,33 +1,62 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_tutorials/auth_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // ignore: constant_identifier_names
-const STORAGE_KEY = 'AUTHENTICATION_STATUS';
+const IS_AUTHENTICATED_KEY = 'IS_AUTHENTICATED_KEY';
+// ignore: constant_identifier_names
+const AUTHENTICATED_USER_EMAIL_KEY = 'AUTHENTICATED_USER_EMAIL_KEY';
 
 final sharedPrefProvider = Provider((_) async {
   return await SharedPreferences.getInstance();
 });
 
-final setAuthStateProvider = StateProvider<dynamic>(
+final setAuthStateProvider = StateProvider<AuthResponse?>(
   (ref) => null,
 );
 
-final setAuthStorage =
-    StateProvider.family<void, bool>((ref, isAuthenticated) async {
-  final prefs = await ref.watch(sharedPrefProvider);
-  ref.watch(setAuthStateProvider); // watch the privider in case of any change.
-  prefs.setBool(STORAGE_KEY, isAuthenticated);
-});
+final setIsAuthenticatedProvider = StateProvider.family<void, bool>(
+  (ref, isAuth) async {
+    final prefs = await ref.watch(sharedPrefProvider);
+    ref.watch(setAuthStateProvider);
+    prefs.setBool(
+      IS_AUTHENTICATED_KEY,
+      isAuth,
+    );
+  },
+);
 
-final getAuthStorage = FutureProvider<bool>((ref) async {
-  final prefs = await ref.watch(sharedPrefProvider);
-  ref.watch(setAuthStateProvider);
-  return prefs.getBool(STORAGE_KEY) ?? false;
-});
+final setAuthenticatedUserProvider = StateProvider.family<void, String>(
+  (ref, email) async {
+    final prefs = await ref.watch(sharedPrefProvider);
+    ref.watch(setAuthStateProvider);
+    prefs.setString(
+      AUTHENTICATED_USER_EMAIL_KEY,
+      email,
+    );
+  },
+);
+
+final getIsAuthenticatedProvider = FutureProvider<bool>(
+  (ref) async {
+    final prefs = await ref.watch(sharedPrefProvider);
+    ref.watch(setAuthStateProvider);
+    return prefs.getBool(IS_AUTHENTICATED_KEY) ?? false;
+  },
+);
+
+final getAuthenticatedUserProvider = FutureProvider<String>(
+  (ref) async {
+    final prefs = await ref.watch(sharedPrefProvider);
+    ref.watch(setAuthStateProvider);
+    return prefs.getString(AUTHENTICATED_USER_EMAIL_KEY) ?? '';
+  },
+);
 // Todo: Handle logout or and reset
 final resetStorage = StateProvider<dynamic>(
   (ref) async {
     final prefs = await ref.watch(sharedPrefProvider);
-    prefs.clear();
+    final isCleared = await prefs.clear();
+    return isCleared;
   },
 );

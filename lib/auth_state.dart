@@ -29,6 +29,12 @@ class AuthValues {
         clientId = json['clientId'];
 }
 
+class AuthResponse {
+  AuthResponse({required this.authValues, required this.statusCode});
+  final AuthValues authValues;
+  final int statusCode;
+}
+
 class AuthenticationHandler {
   late AuthValues authValues = AuthValues(
     email: '',
@@ -37,7 +43,7 @@ class AuthenticationHandler {
     token: '',
   );
 
-  Future<int> login(AuthArgs args) async {
+  Future<AuthResponse> login(AuthArgs args) async {
     final response = await http.post(
       Uri.http('localhost:4000', '/api/login'),
       body: {
@@ -46,10 +52,12 @@ class AuthenticationHandler {
         'token': 'my_token',
       },
     );
-    if (response.body.isNotEmpty) {
-      authValues = AuthValues.fromJson(jsonDecode(response.body));
-    }
-    return response.statusCode;
+    authValues = AuthValues.fromJson(jsonDecode(response.body));
+    // return response.statusCode;
+    return AuthResponse(
+      authValues: authValues,
+      statusCode: response.statusCode,
+    );
   }
 }
 
@@ -60,16 +68,17 @@ final authenticationHandlerProvider = StateProvider<AuthenticationHandler>(
 final authLoginProvider = FutureProvider.family<bool, AuthArgs>(
   (ref, authArgs) async {
     return Future.delayed(const Duration(seconds: 2), () async {
-      final statusCode = await ref.watch(authenticationHandlerProvider).login(
+      final authResponse = await ref.watch(authenticationHandlerProvider).login(
             authArgs,
           );
-      final isAuthenticated = statusCode == 200;
+      final isAuthenticated = authResponse.statusCode == 200;
       if (isAuthenticated) {
-        ref.read(setAuthStateProvider.notifier).state = isAuthenticated;
-        ref.read(setAuthStorage(isAuthenticated));
+        ref.read(setAuthStateProvider.notifier).state = authResponse;
+        ref.read(setIsAuthenticatedProvider(isAuthenticated));
+        ref.read(setAuthenticatedUserProvider(authResponse.authValues.email));
       } else {
         ref.read(authErrorMessageProvider.notifier).state =
-            'Error occurred while login with code: $statusCode';
+            'Error occurred while login with code: ${authResponse.statusCode}';
       }
 
       return isAuthenticated;
